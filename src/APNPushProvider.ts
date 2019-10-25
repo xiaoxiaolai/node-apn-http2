@@ -1,12 +1,14 @@
 import { APNNotification } from './APNNotification';
 import { AuthToken } from './Token';
 import { TokenOptions } from './TokenOptions';
-import { Http2Session, ClientHttp2Session } from 'http2';
+import { ClientHttp2Session } from 'http2';
 import * as http2 from 'http2';
 
+const defaultPingInterval = 300000;
 export interface APNProviderOptions {
   token: TokenOptions,
   production?: boolean,
+  pingInterval?: number
 }
 
 export interface APNSendResult {
@@ -27,6 +29,7 @@ let AuthorityAddress = {
 export class APNPushProvider {
   private authToken: AuthToken;
   private session: ClientHttp2Session;
+  private pingTimer: NodeJS.Timer;
   private _lastToken: string;
   private _lastTokenTime: number;
 
@@ -40,6 +43,15 @@ export class APNPushProvider {
   private ensureConnected() {
     if (!this.session || this.session.destroyed) {
       this.session = http2.connect(this.options.production ? AuthorityAddress.production : AuthorityAddress.development);
+      let pingInterval = typeof this.options.pingInterval === 'number' ? this.options.pingInterval : defaultPingInterval;
+      if (pingInterval <= 0) {
+          pingInterval = defaultPingInterval;
+      }
+      this.session.once('connect', ()=> {
+        this.pingTimer = setInterval(()=> {
+          this.session.ping(()=> { });
+        }, pingInterval);
+      })
     }
   }
 
@@ -89,7 +101,7 @@ export class APNPushProvider {
   private sendPostRequest(headers, payload, deviceToken): Promise<{ status?: string, body?: string, device?: string, error?: Error }> {
     return new Promise((resolve, reject) => {
 
-      var req = this.session.request(headers);
+      const req = this.session.request(headers);
 
       req.setEncoding('utf8');
 
@@ -115,6 +127,10 @@ export class APNPushProvider {
   }
 
   shutdown() {
+    if (this.pingTimer) {
+      clearInterval(this.pingTimer);
+      delete this.pingTimer;
+    }
     this.session.destroy();
   }
 }
