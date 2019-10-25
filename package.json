@@ -5,8 +5,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "prepublish": "tsc -p ."
+    "prepare": "tsc"
   },
   "repository": "https://github.com/andreialecu/node-apn-http2",
   "author": "Andrei Alecu",
