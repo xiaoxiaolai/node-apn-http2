@@ -11,7 +11,7 @@
   "author": "Andrei Alecu",
   "license": "MIT",
   "engines": {
-    "node": ">= 8.8.1"
+    "node": "^8.13.0 || ^10.10.0"
   },
   "dependencies": {
     "jsonwebtoken": "^8.1.0"
